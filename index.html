@@ -12,7 +12,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans
 .msg{display:inline-block;background:#fff8e8ee;color:#382510;padding:9px 13px;border-radius:14px;font-weight:700;box-shadow:0 2px 10px #0004}
 .controls{position:fixed;z-index:31;right:10px;top:58px;display:flex;gap:7px;flex-direction:column}
 .ctrl{border:1px solid #d3ad62;background:#fff8e8ee;color:#33230f;border-radius:50%;width:44px;height:44px;font-size:20px}
-.panel{position:fixed;z-index:30;left:10px;right:10px;bottom:10px;max-height:61%;overflow:auto;background:#fffdf4f5;color:#2e2418;border:2px solid #d3ad62;border-radius:18px;padding:14px;box-shadow:0 5px 22px #0006;display:none}
+.panel{position:fixed;z-index:60;left:10px;right:10px;bottom:10px;max-height:61%;overflow:auto;background:#fffdf4f5;color:#2e2418;border:2px solid #d3ad62;border-radius:18px;padding:14px;box-shadow:0 5px 22px #0006;display:none}
 .panel h2{font-size:20px;margin:0 42px 8px 0}.panel h3{font-size:16px;margin:12px 0 5px}.panel p{font-size:15px;line-height:1.42;margin:7px 0}
 .close{position:absolute;right:10px;top:9px;border:0;background:#17324d;color:white;border-radius:10px;padding:8px 10px;font-weight:bold}
 .action,.quiz button{display:block;width:100%;margin:7px 0;border:1px solid #b28b48;background:#fff7df;border-radius:11px;padding:11px;text-align:left;font-size:15px}
@@ -40,8 +40,11 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans
   /* Panel ocupa la pantalla de forma vertical sin tapar controles esenciales */
   .panel{
     left:6px;right:6px;bottom:6px;
-    max-height:72vh;
+    top:64px; bottom:10px;
+    max-height:none;
     padding:12px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     border-radius:15px;
   }
   .panel h2{font-size:18px;margin-right:38px}
@@ -201,7 +204,7 @@ video{
 <script>
 const panel=document.querySelector('#panel'),title=document.querySelector('#ptitle'),body=document.querySelector('#pbody'),
 status=document.querySelector('#status'), interior=document.querySelector('#interior'), pyramid=document.querySelector('#pyramidGroup');
-let lastNarration='', audioCtx=null, ambientNodes=[], ambientOn=false;
+let lastNarration='', audioCtx=null, ambientNodes=[], ambientOn=false, targetVisible=false;
 
 const sections={
 faraon:{title:'👑 El faraón',text:'El faraón era el gobernante de Egipto. Tenía funciones políticas y religiosas y ocupaba la cima de la organización del Estado.',html:`<p>El <b>faraón</b> era el gobernante de Egipto. Tenía funciones políticas y religiosas y ocupaba la cima de la organización del Estado.</p><p><b>Observá el objeto 3D:</b> sus colores recuerdan algunos de los símbolos asociados con la realeza egipcia.</p>`},
@@ -213,13 +216,18 @@ galeria:{title:'↗️ Gran Galería',text:'La Gran Galería es un corredor alto
 rey:{title:'👑 Cámara del Rey',text:'La Cámara del Rey se encuentra en el interior de la Gran Pirámide y contiene un sarcófago de granito.',html:'<p>La llamada <b>Cámara del Rey</b> se encuentra en el interior de la Gran Pirámide y contiene un sarcófago de granito.</p>'},
 reina:{title:'🔎 Cámara llamada de la Reina',text:'Esta cámara recibe tradicionalmente el nombre de Cámara de la Reina, aunque el nombre no significa que allí fuera enterrada una reina.',html:'<p>Esta cámara recibe tradicionalmente el nombre de <b>Cámara de la Reina</b>, aunque ese nombre no significa que allí fuera enterrada una reina.</p>'}
 };
-function showSection(k){const s=sections[k];title.textContent=s.title;body.innerHTML=s.html+`<button class="action" id="speakHere">🔊 Escuchar narración</button>`;panel.style.display='block';lastNarration=s.text;document.querySelector('#speakHere').addEventListener('click',()=>speak(lastNarration));}
+function hideMenus(){arMenu.style.display='none';interiorMenu.style.display='none';}
+function restoreMenu(){if(!targetVisible)return; if(interior.getAttribute('visible')) interiorMenu.style.display='grid'; else arMenu.style.display='grid';}
+function openPanel(){hideMenus();collapseAudio();panel.style.display='block';panel.scrollTop=0;}
+function closePanel(){panel.style.display='none';speechSynthesis?.cancel();collapseAudio();restoreMenu();}
+function showSection(k){const s=sections[k];title.textContent=s.title;body.innerHTML=s.html+`<button class="action" id="speakHere">🔊 Escuchar narración</button>`;openPanel();lastNarration=s.text;document.querySelector('#speakHere').addEventListener('click',()=>speak(lastNarration));}
 function speak(t){if(!('speechSynthesis'in window))return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t);u.lang='es-AR';u.rate=.92;speechSynthesis.speak(u);}
 document.querySelector('#narrateBtn').addEventListener('click',()=>{if(lastNarration)speak(lastNarration);else speak('Bienvenidos a Misión Egipto. Apuntá a la lámina y tocá los símbolos para explorar.');autoCollapseAudio();});
-document.querySelector('#close').addEventListener('click',()=>{panel.style.display='none';speechSynthesis?.cancel();collapseAudio();});
+document.querySelector('#close').addEventListener('click',closePanel);
 
 const arMenu=document.querySelector('#arMenu'), interiorMenu=document.querySelector('#interiorMenu');
 function toggleInterior(on){
+ panel.style.display='none'; collapseAudio();
  interior.setAttribute('visible',on); pyramid.setAttribute('visible',!on);
  arMenu.style.display=on?'none':'grid'; interiorMenu.style.display=on?'grid':'none';
  if(on){status.textContent='Vista interior: elegí una parte';lastNarration='Bienvenidos al interior de la Gran Pirámide. Elegí una parte para comenzar la visita.';speak(lastNarration);}
@@ -238,7 +246,7 @@ function openMuseum(){collapseAudio();
  <iframe class="museumFrame" title="Vaso canopo" allow="autoplay; fullscreen; xr-spatial-tracking"
  src="https://sketchfab.com/models/3c723241b22d4a208472cad3a83ac831/embed?autostart=0&ui_theme=dark"></iframe>
  <p class="credit">Modelo 3D: Cleveland Museum of Art, Open Access / CC0.</p>`;
- panel.style.display='block';
+ openPanel();
  lastNarration='Estás en el museo arqueológico 3D. Estos modelos representan piezas reales conservadas en colecciones de museo.';
 }
 document.querySelectorAll('[data-htmlkey]').forEach(b=>b.addEventListener('click',()=>{
@@ -326,15 +334,15 @@ const questions=[
 ];
 let quiz=[],qi=0,score=0;
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
-function startQuiz(){collapseAudio();quiz=shuffle(questions).slice(0,5);qi=0;score=0;renderQuestion();}
+function startQuiz(){hideMenus();collapseAudio();quiz=shuffle(questions).slice(0,5);qi=0;score=0;renderQuestion();}
 function renderQuestion(){
  title.textContent='🏆 Desafío del arqueólogo';
- if(qi>=quiz.length){body.innerHTML=`<p><b>¡Misión terminada!</b></p><p>Obtuviste <b>${score} de ${quiz.length}</b>.</p><button class="action" id="again">🔄 Jugar otra vez</button>`;panel.style.display='block';lastNarration=`Misión terminada. Obtuviste ${score} de ${quiz.length} respuestas correctas.`;document.querySelector('#again').addEventListener('click',startQuiz);return;}
+ if(qi>=quiz.length){body.innerHTML=`<p><b>¡Misión terminada!</b></p><p>Obtuviste <b>${score} de ${quiz.length}</b>.</p><button class="action" id="again">🔄 Jugar otra vez</button>`;openPanel();lastNarration=`Misión terminada. Obtuviste ${score} de ${quiz.length} respuestas correctas.`;document.querySelector('#again').addEventListener('click',startQuiz);return;}
  const x=quiz[qi];
  // También se mezcla el orden visible de respuestas conservando cuál es la correcta.
  const opts=x.a.map((v,i)=>({v,ok:i===x.c})); const mixed=shuffle(opts);
  body.innerHTML=`<p><b>Pregunta ${qi+1} de ${quiz.length}</b></p><p>${x.q.replace(/^\d+\.\s*/,'')}</p><div class="quiz">${mixed.map((o,i)=>`<button data-i="${i}" data-ok="${o.ok}">${o.v}</button>`).join('')}</div><div id="feedback" class="feedback"></div>`;
- panel.style.display='block';lastNarration=x.q;
+ openPanel();lastNarration=x.q;
  body.querySelectorAll('[data-i]').forEach(btn=>btn.addEventListener('click',()=>{
   const ok=btn.dataset.ok==='true',fb=document.querySelector('#feedback');body.querySelectorAll('[data-i]').forEach(b=>b.disabled=true);
   if(ok){score++;btn.classList.add('correct');fb.textContent='✓ ¡Correcto!';}
@@ -343,8 +351,8 @@ function renderQuestion(){
  }));
 }
 const target=document.querySelector('#target');
-target.addEventListener('targetFound',()=>{status.textContent='¡Egipto encontrado! Elegí una opción'; if(interior.getAttribute('visible')) interiorMenu.style.display='grid'; else arMenu.style.display='grid';});
-target.addEventListener('targetLost',()=>{status.textContent='Volvé a apuntar a la lámina de Egipto'; arMenu.style.display='none'; interiorMenu.style.display='none';});
+target.addEventListener('targetFound',()=>{targetVisible=true;status.textContent='¡Egipto encontrado! Elegí una opción'; if(panel.style.display==='block') return; restoreMenu();});
+target.addEventListener('targetLost',()=>{targetVisible=false;status.textContent='Volvé a apuntar a la lámina de Egipto'; hideMenus();});
 </script>
 </body>
 </html>
