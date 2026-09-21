@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Misión Egipto AR</title>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#000}
+.hud{position:fixed;z-index:20;left:8px;right:8px;top:8px;text-align:center;pointer-events:none}
+.msg{display:inline-block;background:#fff8e8ee;color:#382510;padding:9px 13px;border-radius:14px;font-weight:700;box-shadow:0 2px 10px #0004}
+.panel{position:fixed;z-index:30;left:10px;right:10px;bottom:10px;max-height:58%;overflow:auto;background:#fffdf4f5;color:#2e2418;border:2px solid #d3ad62;border-radius:18px;padding:14px;box-shadow:0 5px 22px #0006;display:none}
+.panel h2{font-size:20px;margin:0 42px 8px 0}.panel p{font-size:15px;line-height:1.42;margin:7px 0}
+.close{position:absolute;right:10px;top:9px;border:0;background:#17324d;color:white;border-radius:10px;padding:8px 10px;font-weight:bold}
+.quiz button,.action{display:block;width:100%;margin:7px 0;border:1px solid #b28b48;background:#fff7df;border-radius:11px;padding:10px;text-align:left;font-size:15px}
+.quiz button.correct{background:#dff4df}.quiz button.wrong{background:#f8dddd}
+.feedback{font-weight:bold;margin-top:8px}.small{font-size:12px;color:#6b583e}
+</style>
+</head>
+<body>
+<div class="hud"><div id="status" class="msg">Permití la cámara y apuntá a la lámina de Egipto</div></div>
+
+<div id="panel" class="panel">
+<button id="close" class="close">✕</button>
+<h2 id="ptitle"></h2>
+<div id="pbody"></div>
+</div>
+
+<a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: yes;"
+ color-space="sRGB" renderer="colorManagement:true, physicallyCorrectLights"
+ vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false">
+<a-camera position="0 0 0" look-controls="enabled:false" cursor="fuse:false; rayOrigin:mouse"
+ raycaster="far:10000; objects:.clickable"></a-camera>
+
+<a-entity mindar-image-target="targetIndex:0" id="target">
+  <a-entity id="pyramidGroup" class="clickable" data-key="piramide" position="0 0.02 0.08">
+    <a-cone radius-bottom="0.25" radius-top="0" height="0.32" color="#d8ad62"></a-cone>
+    <a-ring radius-inner="0.27" radius-outer="0.285" rotation="-90 0 0" color="#f3d895"
+      animation="property:rotation; to:-90 360 0; loop:true; dur:7000; easing:linear"></a-ring>
+    <a-text value="EXPLORAR PIRAMIDE" position="0 -0.22 0.03" align="center" width="1.0" color="#17324d"></a-text>
+  </a-entity>
+
+  <a-circle class="clickable" data-key="faraon" position="-0.35 0.27 0.06" radius="0.065" color="#e0b84e"
+    animation="property:scale; dir:alternate; dur:900; loop:true; to:1.12 1.12 1.12"></a-circle>
+  <a-text value="FARAON" position="-0.35 0.18 0.07" align="center" width="0.55" color="#fff"></a-text>
+
+  <a-circle class="clickable" data-key="sarcófago" position="0.35 0.27 0.06" radius="0.065" color="#3f8e9a"
+    animation="property:scale; dir:alternate; dur:1050; loop:true; to:1.12 1.12 1.12"></a-circle>
+  <a-text value="SARCOFAGO" position="0.35 0.18 0.07" align="center" width="0.55" color="#fff"></a-text>
+
+  <a-circle class="clickable" data-key="jeroglificos" position="-0.35 -0.25 0.06" radius="0.065" color="#8f6a3b"
+    animation="property:scale; dir:alternate; dur:1150; loop:true; to:1.12 1.12 1.12"></a-circle>
+  <a-text value="JEROGLIFICOS" position="-0.35 -0.34 0.07" align="center" width="0.55" color="#fff"></a-text>
+
+  <a-circle class="clickable" data-key="dioses" position="0.35 -0.25 0.06" radius="0.065" color="#466b55"
+    animation="property:scale; dir:alternate; dur:1000; loop:true; to:1.12 1.12 1.12"></a-circle>
+  <a-text value="DIOSES" position="0.35 -0.34 0.07" align="center" width="0.55" color="#fff"></a-text>
+
+  <a-box class="clickable" data-key="desafio" position="0 -0.39 0.07" width="0.35" height="0.09" depth="0.02" color="#6c5aa7"></a-box>
+  <a-text value="DESAFIO" position="0 -0.405 0.09" align="center" width="0.62" color="#fff"></a-text>
+</a-entity>
+</a-scene>
+
+<script>
+const panel=document.querySelector('#panel'), title=document.querySelector('#ptitle'),
+body=document.querySelector('#pbody'), status=document.querySelector('#status');
+
+const sections={
+piramide:{
+ title:'🏜️ Entrá en la pirámide',
+ html:`<p>Las grandes pirámides fueron construidas como monumentos funerarios reales.</p>
+ <p><b>Entrada:</b> daba acceso a los pasajes interiores.</p>
+ <p><b>Gran Galería:</b> un corredor alto que conduce hacia la zona superior.</p>
+ <p><b>Cámara del Rey:</b> cámara situada en el interior de la Gran Pirámide.</p>
+ <p><b>Cámara llamada “de la Reina”:</b> otra cámara interna; su nombre tradicional no significa que allí fuera enterrada una reina.</p>
+ <p class="small">Misión: localizá mentalmente entrada → galería → cámaras.</p>`
+},
+faraon:{
+ title:'👑 ¿Quién era el faraón?',
+ html:`<p>El faraón era el gobernante de Egipto. Tenía funciones políticas y religiosas y estaba en la cima de la organización del Estado.</p>
+ <p><b>Buscá en la lámina:</b> ¿qué símbolos asociás con el poder del faraón?</p>`
+},
+'sarcófago':{
+ title:'⚱️ El mundo funerario',
+ html:`<p>Los egipcios preparaban los cuerpos de algunos difuntos mediante la momificación. Los sarcófagos protegían el cuerpo y podían llevar inscripciones y decoraciones.</p>
+ <p>Estas prácticas estaban relacionadas con sus creencias sobre la vida después de la muerte.</p>`
+},
+jeroglificos:{
+ title:'𓂀 Descifrá los jeroglíficos',
+ html:`<p>La escritura jeroglífica utilizaba signos. Algunos representaban sonidos y otros podían representar palabras o ideas.</p>
+ <p><b>Desafío:</b> encontrá en la lámina tres símbolos diferentes y describí su forma a un compañero.</p>`
+},
+dioses:{
+ title:'🐺 Dioses y creencias',
+ html:`<p>La religión egipcia era politeísta: se rendía culto a numerosos dioses y diosas.</p>
+ <p><b>Anubis</b> estaba vinculado con los ritos funerarios. <b>Ra</b> se asociaba con el Sol y <b>Osiris</b> con el mundo de los muertos y la renovación.</p>`
+}
+};
+
+function showSection(key){
+ const s=sections[key]; title.textContent=s.title; body.innerHTML=s.html; panel.style.display='block';
+}
+document.querySelector('#close').addEventListener('click',()=>panel.style.display='none');
+
+document.querySelectorAll('.clickable').forEach(el=>el.addEventListener('click',()=>{
+ const key=el.dataset.key;
+ if(key==='desafio') startQuiz(); else showSection(key);
+}));
+
+const questions=[
+ {q:'1. ¿Cuál era una función principal de las grandes pirámides?', a:['Servir como monumentos funerarios reales','Ser mercados','Ser puertos'], c:0},
+ {q:'2. ¿Quién estaba en la cima de la organización política egipcia?', a:['El faraón','El campesino','El artesano'], c:0},
+ {q:'3. ¿Para qué servía un sarcófago?', a:['Para proteger el cuerpo del difunto','Para guardar alimentos','Para navegar por el Nilo'], c:0},
+ {q:'4. ¿Qué eran los jeroglíficos?', a:['Un sistema de escritura','Una moneda','Una herramienta agrícola'], c:0},
+ {q:'5. ¿Con qué estaba relacionado Anubis?', a:['Los ritos funerarios','La navegación','La agricultura'], c:0}
+];
+let qi=0,score=0;
+function startQuiz(){qi=0;score=0;renderQuestion();}
+function renderQuestion(){
+ title.textContent='🏆 Misión del arqueólogo';
+ if(qi>=questions.length){
+   body.innerHTML=`<p><b>¡Misión terminada!</b></p><p>Obtuviste <b>${score} de ${questions.length}</b> respuestas correctas.</p>
+   <button class="action" id="again">Volver a jugar</button>`;
+   panel.style.display='block';
+   document.querySelector('#again').addEventListener('click',startQuiz); return;
+ }
+ const x=questions[qi];
+ body.innerHTML=`<p><b>${x.q}</b></p><div class="quiz">${x.a.map((v,i)=>`<button data-answer="${i}">${v}</button>`).join('')}</div><div id="feedback" class="feedback"></div>`;
+ panel.style.display='block';
+ body.querySelectorAll('[data-answer]').forEach(btn=>btn.addEventListener('click',()=>{
+   const i=Number(btn.dataset.answer), fb=document.querySelector('#feedback');
+   body.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);
+   if(i===x.c){score++;btn.classList.add('correct');fb.textContent='✓ ¡Correcto!';}
+   else{btn.classList.add('wrong');body.querySelector(`[data-answer="${x.c}"]`).classList.add('correct');fb.textContent='Revisá la respuesta marcada en verde.';}
+   setTimeout(()=>{qi++;renderQuestion();},1100);
+ }));
+}
+const target=document.querySelector('#target');
+target.addEventListener('targetFound',()=>status.textContent='¡Egipto encontrado! Tocá los símbolos');
+target.addEventListener('targetLost',()=>status.textContent='Volvé a apuntar a la lámina de Egipto');
+</script>
+</body>
+</html>
